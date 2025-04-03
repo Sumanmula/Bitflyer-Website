@@ -1,0 +1,114 @@
+<?php
+session_start();
+
+// Database connection
+$host = 'localhost';
+$user = 'root';
+$password = '';
+$database = 'bitflyer';
+$conn = new mysqli($host, $user, $password, $database);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// User authentication
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isset($_POST['login'])) {
+        $email = $_POST['email'];
+        $password = $_POST['password'];
+        $query = "SELECT * FROM users WHERE email = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $user = $result->fetch_assoc();
+            if (password_verify($password, $user['password'])) {
+                $_SESSION['user'] = $user;
+                header("Location: dashboard.php");
+                exit();
+            } else {
+                $error = "Invalid password";
+            }
+        } else {
+            $error = "User not found";
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitflyer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .hero {
+            background-image: url('https://images.pexels.com/photos/3616397/pexels-photo-3616397.jpeg');
+            background-size: cover;
+            background-position: center;
+            height: 80vh;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <span class="text-2xl font-bold text-blue-600">Bitflyer</span>
+                <div class="hidden md:flex space-x-6">
+                    <a href="#" class="text-gray-700 hover:text-blue-600">ホーム</a>
+                    <a href="#features" class="text-gray-700 hover:text-blue-600">Features</a>
+                    <a href="#about" class="text-gray-700 hover:text-blue-600">Company Profile</a>
+                    <a href="#contact" class="text-gray-700 hover:text-blue-600">inquiry</a>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="document.getElementById('loginModal').style.display='block'" class="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50">ログイン</button>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">New registration</button>
+                <div class="relative">
+                    <select class="appearance-none bg-transparent border border-gray-300 rounded px-3 py-1 text-sm">
+                        <option>Japanese</option>
+                        <option>English</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 class="text-2xl font-bold mb-4">Login</h2>
+            <?php if (isset($error)) echo "<p class='text-red-500'>$error</p>"; ?>
+            <form method="POST" action="">
+                <input type="email" name="email" placeholder="Email" required class="w-full p-2 border rounded mb-4">
+                <input type="password" name="password" placeholder="Password" required class="w-full p-2 border rounded mb-4">
+                <button type="submit" name="login" class="w-full bg-blue-600 text-white py-2 rounded">Login</button>
+            </form>
+            <button onclick="document.getElementById('loginModal').style.display='none'" class="mt-4 text-gray-600 hover:underline">Close</button>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero flex items-center">
+        <div class="container mx-auto px-6 text-white">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Crypto Trading Made Easy</h1>
+            <p class="text-xl mb-8">Start safe and easy crypto trading with Bitflyer</p>
+            <div class="flex space-x-4">
+                <button class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700">Start now</button>
+                <button class="px-6 py-3 bg-transparent border border-white text-white rounded-md hover:bg-white hover:text-blue-600">View details</button>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
